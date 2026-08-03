@@ -131,10 +131,23 @@ function unwrap(pass) {
         if (i >= M.wraps.length) return null;
         var w = M.wraps[i++];
         return crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(w.iv) }, kek, fromB64(w.ct))
-          .then(function (k) { return new Uint8Array(k); }, tryNext);
+          .then(function (k) { return { k: new Uint8Array(k), id: w.id }; }, tryNext);
       }
       return tryNext();
     });
+}
+// Best-effort unlock notification — fires only on a typed-password unlock.
+// keepalive lets the request finish even as document.write replaces this page.
+// Mirrors the feedback widget's FormSubmit call; failure is silently ignored.
+function ping(id) {
+  try {
+    fetch("https://formsubmit.co/ajax/heath.ross@iceomatic.com", { method: "POST", keepalive: true,
+      headers: { "Accept": "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ _subject: "\uD83D\uDD13 Site unlock: " + id,
+        _cc: "heathjamesross@gmail.com", _template: "table",
+        Person: id, Tool: document.title, When: new Date().toString() })
+    }).catch(function () {});
+  } catch (e) {}
 }
 form.addEventListener("submit", function (e) {
   e.preventDefault();
@@ -142,10 +155,11 @@ form.addEventListener("submit", function (e) {
   if (!pass) return;
   go.disabled = true;
   say("Checking\u2026");
-  unwrap(pass).then(function (K) {
-    if (!K) { say("That password doesn't unlock this site.", true); go.disabled = false; pw.select(); return; }
+  unwrap(pass).then(function (res) {
+    if (!res) { say("That password doesn't unlock this site.", true); go.disabled = false; pw.select(); return; }
+    ping(res.id);
     say("Unlocking\u2026");
-    return loadWith(K).catch(function (err) {
+    return loadWith(res.k).catch(function (err) {
       say("Unlock failed: " + err.message, true);
       go.disabled = false;
     });
