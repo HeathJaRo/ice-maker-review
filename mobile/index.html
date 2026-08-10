@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Ice Maker Field Guide — Ice Maker Tools (private)</title>
+<style>
+  :root { --bg:#f4f6f9; --panel:#fff; --ink:#1b2430; --muted:#5b6673;
+          --line:#dde3ea; --accent:#0b6bcb; --err:#c2372c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14181d; --panel:#1d2329; --ink:#e8ecf1; --muted:#9aa6b2;
+            --line:#303841; --accent:#3b8de0; --err:#f28b82; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center;
+         justify-content:center; background:var(--bg); color:var(--ink);
+         font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+          padding:30px 28px; width:min(360px, calc(100vw - 32px));
+          box-shadow:0 10px 30px rgba(0,0,0,.12); text-align:center; }
+  .logo { font-size:34px; }
+  h1 { font-size:18px; margin:8px 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 18px; }
+  input { width:100%; border:1px solid var(--line); border-radius:9px;
+          padding:10px 12px; font:15px inherit; background:var(--bg);
+          color:var(--ink); }
+  input:focus { outline:2px solid var(--accent); border-color:transparent; }
+  button { width:100%; margin-top:10px; border:none; border-radius:9px;
+           padding:10px 0; background:var(--accent); color:#fff;
+           font:600 14px inherit; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:default; }
+  .msg { font-size:13px; min-height:18px; margin:10px 0 0; color:var(--muted); }
+  .msg.err { color:var(--err); }
+  .notice { text-align:left; background:#fdf3e3; border:1px solid #e0c48a; color:#6b4e12;
+            border-radius:9px; padding:10px 12px; margin:0 0 14px; font-size:12.5px;
+            line-height:1.5; }
+  @media (prefers-color-scheme: dark) {
+    .notice { background:#2e2616; border-color:#5c4a1f; color:#e6cf9a; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">&#129482;</div>
+  <h1>Ice Maker Field Guide</h1>
+  <p class="notice"><b>Why is there a password now?</b> Open access ended after
+     these tools were shown outside the company. Every password is personal and
+     traces to exactly one person &mdash; keep yours to yourself.</p>
+  <p class="sub">Internal Ice-O-Matic review tool. Enter your access password.
+     Don't have one? Ask Heath.</p>
+  <form id="f">
+    <input id="pw" type="password" autocomplete="current-password"
+           placeholder="Access password" autofocus>
+    <button id="go" type="submit">Unlock</button>
+  </form>
+  <p id="msg" class="msg"></p>
+</div>
+<script>
+(function () {
+"use strict";
+var M = {"v":1,"iter":310000,"salt":"ee321VUXUyr268xohqcbkw==","wraps":[{"id":"u01","iv":"cCtaSpTtSFZZr0EY","ct":"S33pbziiSutLBnzrwuNrU6/u4U8TaAAcMomG2GbJavffDVepsPuzwkh74j8GnXHL"},{"id":"u02","iv":"NNKQV7ahBT3FCK01","ct":"UY3lPC9w8MTS1SWCKYwGWdrPACiJESHTIqOnpXrJMJ3zTMLOxH56LOgNrKCLx2Az"},{"id":"u03","iv":"6mFPq1PAeNJLtFyS","ct":"qmkjSESRqntvhs7iVk9Z5KNV7rlVwtlC6BL6JIAARFSGO0wwHdX3Fecn6C3n+x0m"},{"id":"u04","iv":"WNPaifP1R/Lf7FLC","ct":"4wd2BnWmWhhaI4eEMqKws7TL03WHvdMGeY291sLADgRMMgYzckHgO+o6BbxtX8Dj"},{"id":"u05","iv":"wSvgRfp64vGwLQ7X","ct":"ZGUklp97XVge0TGTGwBXYnLge6LMJ4YcdFQdVAa6B7L4osUASRFOfFpiJ1VSPtRI"},{"id":"u06","iv":"1w5pak5v+tJK0I9k","ct":"2/uLYWG6FwMon1LTMpQ+cSdViRgQc+GoHPP/dnasMsXBNZwiNxGFg0fku2ET4Jkn"},{"id":"u07","iv":"O0iuBoLAse9Mr7Mr","ct":"NMG9XcC/ZwVCWIJjNph9/l8Z941WaRQZehPcyrTMbZlBWj/TIfZNcPZzdgJMxRz5"},{"id":"u08","iv":"Uhzqrpz1PDDDVipR","ct":"Vyg0RI36eywSyT+FVjxPvsza3wVeI71fJkKCN6PkOb8lH4uaUZ6x/pltGczDHb2w"},{"id":"u09","iv":"/OOcXmO/j5hcFUyb","ct":"BNCx+c8tSiFHyCzuIKlXj7V27Bk8od/Tu+6XcdU7j1/B0tAINiN4gRfUvo+L6Fo8"},{"id":"u10","iv":"BqtbINMVIMK/ZQpv","ct":"qCL6tHtzQRzWP3g2HRXOVEcPnOxLFVrOlOiPwTKzsZFQi07tCm0myCPDaqucQEg8"},{"id":"u11","iv":"NBVM1aT/P0Sa8gL6","ct":"Dib8ER++uoeDuU+DAZV/tbkKsaK+91KYHJBoDmNF/7gUeMkzEzuMfcMi7cZnRath"},{"id":"u12","iv":"YSzmVOZmB/6lar7P","ct":"b+5DRJ4yRoD52JzNBNCo7ESItjNIdVUAjsPwKRlprhSEOPugr19K2DWUa0idRRLq"},{"id":"u13","iv":"+r1L2NC9U5xoJVBa","ct":"d/ntFkikP9o/UKZMms9109x4suQVvR4EJUcWavTm01NMoasePGcMsAMO0HXf4677"},{"id":"u14","iv":"yfcfAmaYVDKLhD6g","ct":"kg9hR9JLPqXAd/X/xGuKX4Ai93qMJvrx8iWEUNTbJYr1YgjBbzUbTZ21g/VzCzIl"}]};
+var PAYLOAD = "p/index.enc";
+var STORE = "icegate.k";
+var TTL = 7 * 864e5;
+var form = document.getElementById("f"), pw = document.getElementById("pw"),
+    go = document.getElementById("go"), msg = document.getElementById("msg");
+
+function say(t, err) { msg.textContent = t; msg.className = err ? "msg err" : "msg"; }
+function fromB64(s) {
+  var b = atob(s), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function toHex(a) {
+  var s = "";
+  for (var i = 0; i < a.length; i++) s += (a[i] < 16 ? "0" : "") + a[i].toString(16);
+  return s;
+}
+function fromHex(s) {
+  var a = new Uint8Array(s.length / 2);
+  for (var i = 0; i < a.length; i++) a[i] = parseInt(s.substr(i * 2, 2), 16);
+  return a;
+}
+function getStored() {
+  try {
+    var o = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (!o || !o.k || Date.now() - o.t > TTL) { localStorage.removeItem(STORE); return null; }
+    return fromHex(o.k);
+  } catch (e) { return null; }
+}
+function store(k) {
+  try { localStorage.setItem(STORE, JSON.stringify({ k: toHex(k), t: Date.now() })); }
+  catch (e) {}
+}
+function importAes(bytes) {
+  return crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["decrypt"]);
+}
+function gunzip(buf) {
+  var ds = new DecompressionStream("gzip");
+  return new Response(new Blob([buf]).stream().pipeThrough(ds)).text();
+}
+function loadWith(kBytes) {
+  return importAes(kBytes).then(function (key) {
+    return fetch(PAYLOAD).then(function (r) {
+      if (!r.ok) throw new Error("payload HTTP " + r.status);
+      return r.arrayBuffer();
+    }).then(function (ab) {
+      var u = new Uint8Array(ab);
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(0, 12) }, key, u.slice(12));
+    });
+  }).then(gunzip).then(function (html) {
+    store(kBytes); // sliding renewal — active users stay unlocked
+    document.open();
+    document.write(html);
+    document.close();
+  });
+}
+function unwrap(pass) {
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2",
+                                 false, ["deriveBits"])
+    .then(function (base) {
+      return crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: fromB64(M.salt), iterations: M.iter, hash: "SHA-256" },
+        base, 256);
+    })
+    .then(function (bits) { return importAes(new Uint8Array(bits)); })
+    .then(function (kek) {
+      var i = 0;
+      function tryNext() {
+        if (i >= M.wraps.length) return null;
+        var w = M.wraps[i++];
+        return crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(w.iv) }, kek, fromB64(w.ct))
+          .then(function (k) { return { k: new Uint8Array(k), id: w.id }; }, tryNext);
+      }
+      return tryNext();
+    });
+}
+// Best-effort unlock notification — fires only on a typed-password unlock.
+// keepalive lets the request finish even as document.write replaces this page.
+// Mirrors the feedback widget's FormSubmit call; failure is silently ignored.
+function ping(id) {
+  try {
+    fetch("https://formsubmit.co/ajax/heath.ross@iceomatic.com", { method: "POST", keepalive: true,
+      headers: { "Accept": "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ _subject: "\uD83D\uDD13 Site unlock: " + id,
+        _cc: "heathjamesross@gmail.com", _template: "table",
+        Person: id, Tool: document.title, When: new Date().toString() })
+    }).catch(function () {});
+  } catch (e) {}
+}
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var pass = pw.value.trim();
+  if (!pass) return;
+  go.disabled = true;
+  say("Checking\u2026");
+  unwrap(pass).then(function (res) {
+    if (!res) { say("That password doesn't unlock this site.", true); go.disabled = false; pw.select(); return; }
+    ping(res.id);
+    say("Unlocking\u2026");
+    return loadWith(res.k).catch(function (err) {
+      say("Unlock failed: " + err.message, true);
+      go.disabled = false;
+    });
+  }).catch(function (err) {
+    say("Unlock failed: " + err.message, true);
+    go.disabled = false;
+  });
+});
+if (!window.crypto || !crypto.subtle || typeof DecompressionStream === "undefined") {
+  say(location.protocol === "file:"
+      ? "This is a saved copy \u2014 the protected site only opens from its web address."
+      : "This browser can't open the protected site \u2014 use a current Chrome, Safari or Edge.", true);
+  go.disabled = true;
+} else {
+  var k = getStored();
+  if (k) {
+    say("Unlocking\u2026");
+    loadWith(k).catch(function () {
+      // stale key (rotated since) — back to the prompt
+      try { localStorage.removeItem(STORE); } catch (e) {}
+      say("");
+    });
+  }
+}
+})();
+</script>
+</body>
+</html>
