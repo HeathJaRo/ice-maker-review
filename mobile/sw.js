@@ -7,7 +7,7 @@
    catalog out of a stale one. */
 "use strict";
 
-const VERSION = "eb9cd452c51d";
+const VERSION = "77f029e1020f";
 const SHELL_CACHE = "fieldguide-shell-" + VERSION;
 const DATA_CACHE = "fieldguide-data-" + VERSION;
 
@@ -26,6 +26,9 @@ const SHELL = [
   "./app.js",
   "./styles.css",
   "./manifest.webmanifest",
+  // The LED guides. Precached rather than fetched on demand: a tech opens these
+  // in a basement, which is exactly where an on-demand fetch would fail.
+  "./data/troubleshooting.json.enc",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-180.png",

@@ -197,6 +197,124 @@ h1 { font-size: 24px; margin: 18px 0 6px; }
 }
 .sheet-link.off { background: var(--panel); color: var(--muted); border: 1px solid var(--line); }
 
+/* ---------- troubleshooting ---------- */
+.ts-entry {
+  display: block; text-decoration: none; color: inherit;
+  background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
+  padding: 13px 14px; margin: 12px 0 0; min-height: var(--tap);
+}
+.ts-entry-t { display: block; font-weight: 700; color: var(--accent); font-size: 16px; }
+.ts-entry-s { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+.leds { display: inline-flex; gap: 5px; align-items: center; }
+.led {
+  width: 11px; height: 11px; border-radius: 50%;
+  box-shadow: 0 0 5px currentColor; border: 1px solid rgba(0, 0, 0, .25);
+}
+
+/* The blink. Timings are lifted from the old app's QuizHeader.js
+   Animated.loop sequences, not invented: 600ms dark, then each flash is a
+   100ms linear ramp up, 100ms hold, 100ms ramp down, 100ms dark gap —
+   cycles of 900 / 1300 / 1700ms, and the keyframe stops are those
+   millisecond marks as percentages. The group pulses in unison (that is
+   what the machine's lights do); dots rest at 22% opacity instead of 0 so
+   the flash count stays readable between bursts. Worst case is ~1.8
+   flashes/sec, well under the 3/sec photosensitivity line. */
+.leds[class*="blink-"] .led { opacity: .22; }
+.blink-1 .led { animation: ts-flash-1 900ms linear infinite; }
+.blink-2 .led { animation: ts-flash-2 1300ms linear infinite; }
+.blink-3 .led { animation: ts-flash-3 1700ms linear infinite; }
+@keyframes ts-flash-1 {
+  0%, 66.67% { opacity: .22; }
+  77.78%, 88.89% { opacity: 1; }
+  100% { opacity: .22; }
+}
+@keyframes ts-flash-2 {
+  0%, 46.15% { opacity: .22; }
+  53.85%, 61.54% { opacity: 1; }
+  69.23%, 76.92% { opacity: .22; }
+  84.62%, 92.31% { opacity: 1; }
+  100% { opacity: .22; }
+}
+@keyframes ts-flash-3 {
+  0%, 35.29% { opacity: .22; }
+  41.18%, 47.06% { opacity: 1; }
+  52.94%, 58.82% { opacity: .22; }
+  64.71%, 70.59% { opacity: 1; }
+  76.47%, 82.35% { opacity: .22; }
+  88.24%, 94.12% { opacity: 1; }
+  100% { opacity: .22; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .leds[class*="blink-"] .led { animation: none; opacity: 1; }
+}
+.card.ts-guide .card-top { margin-bottom: 4px; }
+.card.ts-guide .model { font-size: 15px; line-height: 1.3; display: block; }
+
+.ts-caveat {
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink);
+  border-radius: 12px; margin: 12px 0; overflow: hidden;
+}
+.ts-caveat > summary {
+  padding: 12px 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+  list-style: none; min-height: var(--tap); display: flex; align-items: center;
+}
+.ts-caveat > summary::-webkit-details-marker { display: none; }
+.ts-caveat > summary::after { content: "\203A"; margin-left: auto; transform: rotate(90deg); }
+.ts-caveat[open] > summary::after { transform: rotate(-90deg); }
+.ts-caveat p { margin: 0; padding: 0 14px 13px; font-size: 14px; line-height: 1.5; }
+
+.ts-head { margin: 2px 0 14px; }
+.ts-crumb {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-weight: 700; font-size: 15px; line-height: 1.3;
+}
+.ts-step { color: var(--muted); font-size: 13px; margin-top: 3px; }
+
+.ts-info {
+  background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 10px; padding: 11px 13px; margin: 0 0 12px;
+  font-size: 15px; line-height: 1.5; color: var(--muted);
+}
+/* The question is the whole screen's job — size it like it matters, and keep
+   the wording intact (it is Ice-O-Matic's service guidance, not UI copy). */
+.ts-question {
+  font-size: 19px; font-weight: 600; line-height: 1.4; margin: 0 0 18px;
+  white-space: pre-line;
+}
+.ts-answers { display: flex; flex-direction: column; gap: 10px; }
+.ts-answer {
+  min-height: 52px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+  font: 700 17px inherit; text-transform: capitalize; padding: 12px;
+}
+.ts-answer:active { opacity: .85; }
+/* Three-plus options is a "which kind of machine" list, not a yes/no decision:
+   style every option the same so none reads as the recommended one. */
+.ts-answers.multi .ts-answer { background: var(--panel); color: var(--accent); }
+
+.ts-terminal {
+  border-radius: 12px; padding: 14px; margin: 0 0 14px; font-size: 15px; line-height: 1.5;
+  border: 1px solid var(--line); background: var(--panel);
+}
+.ts-terminal b { display: block; font-size: 17px; margin-bottom: 5px; }
+.ts-terminal p { margin: 0; color: var(--muted); }
+.ts-terminal.contact { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); }
+.ts-terminal.contact p { color: inherit; }
+.ts-terminal.done { border-color: var(--ok); }
+
+.ts-restart, .ts-pick {
+  display: block; width: 100%; min-height: var(--tap); margin-top: 10px;
+  border-radius: 12px; cursor: pointer; font: 600 15px inherit;
+  border: 1px solid var(--line); background: var(--panel); color: var(--accent);
+}
+/* Pushed well clear of the answers and visually quieter: sitting flush under
+   them, "Start this guide over" read as one more answer to the question. */
+.ts-sep {
+  margin-top: 30px; border-top: 1px solid var(--line); border-radius: 12px;
+  color: var(--muted); font-weight: 500; font-size: 14px;
+}
+
 /* ---------- install tip ---------- */
 #install-tip {
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px;

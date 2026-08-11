@@ -303,6 +303,171 @@ function findByModel(tok) {
   return n.length >= 3 ? modelIndex.get(n) : null;
 }
 
+/* ---------------- troubleshooting (issue #90) ----------------
+   The LED guides from the old IOM app, ported. A tech reads the flashing light
+   on the front of the machine and answers yes/no until they reach a repair
+   action. No radio and no backend: this is the one part of the old app that
+   works with nothing but eyes on the cabinet — which is also why it survived
+   the loss of Hyvery's infrastructure intact.
+
+   Content is Hyvery's, verbatim (source typos included). It is service
+   guidance for someone working on a live machine; rewording it would be
+   changing the instructions. */
+
+const TS_RED = "#F3352F", TS_YELLOW = "#FFF100";
+
+// Pattern key, flash count and LED colors — the physical blink, which is all
+// this file carries. The guide titles (they name the faults) and the
+// older-boards caveat are ported IOM service text, so they ride inside the
+// encrypted payload (`_meta` in troubleshooting.json, emitted by the
+// extractor): the published app.js is served plaintext and must not carry
+// old-app content (#93).
+const TS_GUIDES = [
+  ["redQuickFlash", 1, TS_RED, TS_RED],
+  ["redDoubleFlash", 2, TS_RED, TS_RED],
+  ["redTripleQuickFlash", 3, TS_RED, TS_RED],
+  ["redYellowQuickFlash", 1, TS_RED, TS_YELLOW],
+  ["redYellowDoubleQuickFlash", 2, TS_RED, TS_YELLOW],
+  ["redYellowTripleQuickFlash", 3, TS_RED, TS_YELLOW],
+];
+const TS_COUNT_WORD = { 1: "once", 2: "twice", 3: "three times" };
+
+// The old app gated troubleshooting on model.slice(0,3) === 'CIM'. These trees
+// were written against CIM boards; offering them for a Scotsman would be
+// inventing guidance we don't have.
+const isCIM = (p) => String(p[F.model] || "").slice(0, 3).toUpperCase() === "CIM";
+
+let tsData = null, tsLoading = null;
+let tsTree = null;      // which guide is open
+let tsPath = [];        // branch keys taken so far
+
+// 92 KB, and most sessions never open it — so it loads on demand rather than at
+// boot. The service worker precaches it, so "on demand" still works offline.
+function loadTs() {
+  if (tsData) return Promise.resolve(tsData);
+  if (!tsLoading) {
+    tsLoading = fetch("data/troubleshooting.json.enc")
+      .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then((d) => (tsData = d))
+      .catch((e) => { tsLoading = null; throw e; });
+  }
+  return tsLoading;
+}
+
+// Walk the tree by the branch keys taken. Branch keys are the first three
+// characters of the answer text — the old app's own convention
+// (answer.slice(0,3)), kept so the data needs no rewriting.
+function tsNode() {
+  let n = tsData[tsTree];
+  for (const step of tsPath) {
+    if (!n || !n[step]) return null;
+    n = n[step];
+  }
+  return n;
+}
+
+function ledDots(n, c1, c2) {
+  // blink-<n> animates the whole group with the old app's loop for that count
+  // (timings in styles.css); color rides along so the lit glow matches the dot.
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    out += `<span class="led" style="background:${c1};color:${c1}"></span>`;
+    if (c2 !== c1) out += `<span class="led" style="background:${c2};color:${c2}"></span>`;
+  }
+  return `<span class="leds blink-${n}">${out}</span>`;
+}
+
+function renderTsPicker() {
+  $("#ts-body").innerHTML = `
+    <h1>Troubleshooting</h1>
+    <p class="dim">Read the flashing light on the front of the machine, then pick
+       the pattern that matches.</p>
+    <details class="ts-caveat">
+      <summary>Before you start — flash patterns overlap on older boards</summary>
+      <p>${esc(tsData._meta.caveat)}</p>
+    </details>
+    <div class="cardlist">
+      ${TS_GUIDES.map(([key, n, c1, c2]) => `
+        <button class="card ts-guide" data-ts="${key}">
+          <span class="card-top">${ledDots(n, c1, c2)}</span>
+          <span class="model">${esc(tsData._meta.titles[key])}</span>
+          <span class="meta">Light blinks ${esc(TS_COUNT_WORD[n])} per every <b>1/2</b> second</span>
+        </button>`).join("")}
+    </div>`;
+}
+
+function renderTsNode() {
+  const node = tsNode();
+  const el = $("#ts-body");
+  const guide = TS_GUIDES.find((g) => g[0] === tsTree);
+  const head = `<div class="ts-head">
+      <div class="ts-crumb">${ledDots(guide[1], guide[2], guide[3])} ${esc(tsData._meta.titles[tsTree])}</div>
+      ${tsPath.length ? `<div class="ts-step">Step ${tsPath.length + 1}</div>` : ""}
+    </div>`;
+
+  if (!node) {
+    el.innerHTML = head + `<div class="empty"><b>That path runs out here.</b>
+      The guide has no further step recorded.</div>
+      <button class="ts-restart" type="button">Start this guide over</button>`;
+    return;
+  }
+
+  // Terminal: the guide is exhausted and the tech needs a human.
+  if (node.contact && !(node.buttons || []).length) {
+    el.innerHTML = head + `
+      <div class="ts-terminal contact">
+        <b>Time to call for help.</b>
+        <p>This guide has run out of steps for the symptoms you've described.
+           Contact Ice-O-Matic technical service with the model and serial number
+           and the answers you gave here.</p>
+      </div>
+      <button class="ts-restart" type="button">Start this guide over</button>
+      <button class="ts-pick" type="button">Choose a different light pattern</button>`;
+    return;
+  }
+
+  // Terminal: nothing more to do — send them back to the top.
+  if (node.toStart && !(node.buttons || []).length) {
+    el.innerHTML = head + `
+      <div class="ts-terminal done"><b>That should be it.</b>
+        <p>If the fault comes back, start again — or work the adjacent flash
+           pattern, since older boards share patterns between faults.</p></div>
+      <button class="ts-restart" type="button">Start this guide over</button>
+      <button class="ts-pick" type="button">Choose a different light pattern</button>`;
+    return;
+  }
+
+  const opts = node.buttons || [];
+  const buttons = opts.map((b) =>
+    `<button class="ts-answer" type="button" data-ans="${esc(b)}">${esc(b)}</button>`
+  ).join("");
+  // Yes/no is a decision; three-plus options is a "which kind of machine is
+  // this" list. Style the whole set, not individual positions — picking out the
+  // third option made Remote Cooled look like a lesser answer than Air Cooled.
+  const multi = opts.length > 2 ? " multi" : "";
+
+  el.innerHTML = head +
+    (has(node.info) ? `<div class="ts-info">${esc(node.info)}</div>` : "") +
+    (has(node.question) ? `<div class="ts-question">${esc(node.question)}</div>` : "") +
+    `<div class="ts-answers${multi}">${buttons}</div>` +
+    (tsPath.length ? `<button class="ts-restart ts-sep" type="button">Start this guide over</button>` : "");
+}
+
+function renderTroubleshoot() {
+  if (!tsData) {
+    $("#ts-body").innerHTML = `<div class="empty">Loading the guides&hellip;</div>`;
+    loadTs().then(renderTroubleshoot).catch(() => {
+      $("#ts-body").innerHTML =
+        `<div class="empty"><b>Couldn't load the guides.</b>
+         Open the app once with a signal and they'll be saved for offline use.</div>`;
+    });
+    return;
+  }
+  if (tsTree && tsData[tsTree]) renderTsNode();
+  else renderTsPicker();
+  window.scrollTo(0, 0);
+}
+
 function renderDetail(p) {
   const el = $("#detail");
   const life = p[F.life];
@@ -355,6 +520,10 @@ function renderDetail(p) {
     </div>
     ${warn}
     ${glanceHTML(p)}
+    ${isCIM(p) ? `<a class="ts-entry" href="#/ts">
+        <span class="ts-entry-t">🔴 Troubleshoot a flashing light</span>
+        <span class="ts-entry-s">Guided fault-finding for CIM boards — works offline</span>
+      </a>` : ""}
     ${has(p[F.desc]) ? `<p class="d-desc">${esc(p[F.desc])}</p>` : ""}
     ${sections}
     ${sheet}`;
@@ -399,6 +568,15 @@ function route() {
   if (h.startsWith("p/")) {
     const p = byId.get(decodeURIComponent(h.slice(2)));
     if (p) { renderDetail(p); pushRecent(pid(p)); showView("detail"); return; }
+  }
+  if (h === "ts" || h.startsWith("ts/")) {
+    // Entering by hash always starts the guide at its first question — a
+    // half-finished diagnostic path is not something to restore from a URL.
+    const want = h.startsWith("ts/") ? decodeURIComponent(h.slice(3)) : null;
+    if (want !== tsTree) { tsTree = want; tsPath = []; }
+    showView("troubleshoot");
+    renderTroubleshoot();
+    return;
   }
   if (h === "tools") { showView("tools"); return; }
   const q = $("#search").value.trim();
@@ -486,9 +664,33 @@ $("#back-btn").addEventListener("click", () => {
   if (history.length > 1) history.back();
   else { location.hash = ""; showView(lastResults.length ? "results" : "home"); }
 });
+// Step back one question; from a guide's first question go back to the picker;
+// from the picker leave troubleshooting altogether.
+$("#ts-back").addEventListener("click", () => {
+  if (tsPath.length) { tsPath.pop(); renderTroubleshoot(); return; }
+  if (tsTree) { tsTree = null; renderTroubleshoot(); return; }
+  if (history.length > 1) history.back();
+  else { location.hash = ""; showView("home"); }
+});
+
 document.addEventListener("click", (e) => {
   const card = e.target.closest(".card[data-id]");
   if (card) { location.hash = "#/p/" + encodeURIComponent(card.dataset.id); return; }
+
+  const guide = e.target.closest(".ts-guide");
+  if (guide) { tsTree = guide.dataset.ts; tsPath = []; renderTroubleshoot(); return; }
+
+  const ans = e.target.closest(".ts-answer");
+  if (ans) {
+    // The old app keyed branches on the first three characters of the answer
+    // ('water cooled' -> 'wat'). Keep that so the extracted data stays untouched.
+    tsPath.push(ans.dataset.ans.slice(0, 3));
+    renderTroubleshoot();
+    return;
+  }
+  if (e.target.closest(".ts-restart")) { tsPath = []; renderTroubleshoot(); return; }
+  if (e.target.closest(".ts-pick")) { tsTree = null; tsPath = []; renderTroubleshoot(); return; }
+
   const tab = e.target.closest("#tabbar button");
   if (tab) {
     if (tab.dataset.tab === "tools") location.hash = "#tools";
