@@ -60,7 +60,7 @@ const SPEC_SECTIONS = [
     ["Ice shape", "Ice Shape"],
     ["Ice dimensions", "Ice Dimensions"],
     ["Production @ 90°F/70°F (lbs/24hr)", "90F air / 70F water Production"],
-    ["AHRI rated production (lbs/24hr)", "AHRI Rated Production (lbs/24hr)"],
+    ["Production @ 70°F/50°F (lbs/24hr)", "70F air / 50F water Production (lbs/24hr)"],
     ["Energy (kWh/100 lbs @ 90/70)", "Energy Consumption (kWh/100 lbs ice @ 90F/70F)"],
     ["Built-in storage (lbs)", "Built-in Storage (lbs)"],
     ["Max bin capacity (lbs)", "Max Bin Capacity (lbs)"],
@@ -228,7 +228,7 @@ function badge(p) {
 function cardHTML(p) {
   const bits = [];
   if (has(p[F.itemType])) bits.push(esc(p[F.itemType]));
-  const prod = p["90F air / 70F water Production"] ?? p["AHRI Rated Production (lbs/24hr)"];
+  const prod = p["90F air / 70F water Production"] ?? p["70F air / 50F water Production (lbs/24hr)"];
   if (has(prod)) bits.push(`<b>${esc(prod)}</b> lbs/24hr`);
   if (has(p["Voltage"])) bits.push(`${esc(p["Voltage"])}V`);
   return `<button class="card" data-id="${esc(pid(p))}">
