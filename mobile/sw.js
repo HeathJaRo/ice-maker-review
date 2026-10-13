@@ -7,7 +7,7 @@
    catalog out of a stale one. */
 "use strict";
 
-const VERSION = "82a130aaa475";
+const VERSION = "ac308472eba5";
 const SHELL_CACHE = "fieldguide-shell-" + VERSION;
 const DATA_CACHE = "fieldguide-data-" + VERSION;
 
